@@ -117,7 +117,7 @@ export const LearningSection: React.FC = () => {
             <h3 className="mt-2 text-2xl font-bold text-slate-900">{lesson.title}</h3>
             <p className="mt-1 text-sm text-slate-500">{lesson.subtitle}</p>
             <div className="mt-6 space-y-6">
-              {lesson.sections.map((section, index) => <article key={section.heading} className="border-l-2 border-indigo-200 pl-4">
+              {lesson.sections.map((section) => <article key={section.heading} className="border-l-2 border-indigo-200 pl-4">
                 <h4 className="font-bold text-slate-800">{section.heading}</h4>
                 <p className="mt-2 text-sm leading-7 text-slate-600">{section.body}</p>
                 {section.example && <pre className="mt-3 whitespace-pre-wrap rounded-xl bg-slate-50 border border-slate-200 p-4 text-sm leading-6 text-slate-800 font-mono">{section.example}</pre>}
