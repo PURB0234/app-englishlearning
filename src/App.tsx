@@ -4,6 +4,7 @@ import { ADDITIONAL_QUESTION_BANK } from './data/additionalQuestions';
 import { AnswerMap, EprtQuestionBank, ExamMode, SectionKey } from './types/eprt';
 import { calculateEprtScore } from './utils/scoring';
 import { Navbar } from './components/Navbar';
+import { LearningSection } from './components/LearningSection';
 import { ListeningSection } from './components/ListeningSection';
 import { StructureSection } from './components/StructureSection';
 import { ReadingSection } from './components/ReadingSection';
@@ -34,9 +35,7 @@ export function App() {
     try {
       const saved = localStorage.getItem(STORAGE_BANK_KEY);
       if (saved) return withAdditionalQuestions(JSON.parse(saved) as EprtQuestionBank);
-    } catch {
-      // Fallback to default bank
-    }
+    } catch { /* Fallback to default bank */ }
     return withAdditionalQuestions(DEFAULT_QUESTION_BANK);
   });
 
@@ -44,117 +43,42 @@ export function App() {
     try {
       const saved = localStorage.getItem(STORAGE_ANSWERS_KEY);
       if (saved) return JSON.parse(saved) as AnswerMap;
-    } catch {
-      // Fallback empty
-    }
+    } catch { /* Fallback empty */ }
     return {};
   });
 
-  const [activeSection, setActiveSection] = useState<SectionKey>('listening');
+  const [activeSection, setActiveSection] = useState<SectionKey>('learning');
   const [examMode, setExamMode] = useState<ExamMode>('practice');
   const [isScoreModalOpen, setIsScoreModalOpen] = useState(false);
   const [isCrudModalOpen, setIsCrudModalOpen] = useState(false);
 
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_BANK_KEY, JSON.stringify(questionBank));
-    } catch {
-      // Ignore storage quota errors
-    }
+    try { localStorage.setItem(STORAGE_BANK_KEY, JSON.stringify(questionBank)); } catch { /* Ignore storage quota errors */ }
   }, [questionBank]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_ANSWERS_KEY, JSON.stringify(answers));
-    } catch {
-      // Ignore storage quota errors
-    }
+    try { localStorage.setItem(STORAGE_ANSWERS_KEY, JSON.stringify(answers)); } catch { /* Ignore storage quota errors */ }
   }, [answers]);
 
   const handleSelectAnswer = (questionId: string, optionIndex: number) => {
-    setAnswers((prev) => ({
-      ...prev,
-      [questionId]: optionIndex,
-    }));
+    setAnswers((prev) => ({ ...prev, [questionId]: optionIndex }));
   };
-
-  const handleResetAnswers = () => {
-    setAnswers({});
-    localStorage.removeItem(STORAGE_ANSWERS_KEY);
-  };
-
-  const handleResetDefaultBank = () => {
-    setQuestionBank(withAdditionalQuestions(DEFAULT_QUESTION_BANK));
-    localStorage.removeItem(STORAGE_BANK_KEY);
-  };
-
-  const scoreReport = useMemo(
-    () => calculateEprtScore(questionBank, answers),
-    [questionBank, answers]
-  );
+  const handleResetAnswers = () => { setAnswers({}); localStorage.removeItem(STORAGE_ANSWERS_KEY); };
+  const handleResetDefaultBank = () => { setQuestionBank(withAdditionalQuestions(DEFAULT_QUESTION_BANK)); localStorage.removeItem(STORAGE_BANK_KEY); };
+  const scoreReport = useMemo(() => calculateEprtScore(questionBank, answers), [questionBank, answers]);
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900">
-      <Navbar
-        activeSection={activeSection}
-        onSelectSection={setActiveSection}
-        examMode={examMode}
-        onToggleExamMode={setExamMode}
-        totalScore={scoreReport.totalScore}
-        answeredCount={scoreReport.answeredCount}
-        totalQuestions={scoreReport.totalQuestions}
-        onOpenScoreModal={() => setIsScoreModalOpen(true)}
-        onOpenCrudModal={() => setIsCrudModalOpen(true)}
-      />
-
+      <Navbar activeSection={activeSection} onSelectSection={setActiveSection} examMode={examMode} onToggleExamMode={setExamMode} totalScore={scoreReport.totalScore} answeredCount={scoreReport.answeredCount} totalQuestions={scoreReport.totalQuestions} onOpenScoreModal={() => setIsScoreModalOpen(true)} onOpenCrudModal={() => setIsCrudModalOpen(true)} />
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {activeSection === 'listening' && (
-          <ListeningSection
-            shortItems={questionBank.listeningShort}
-            longItems={questionBank.listeningLong}
-            lectureItems={questionBank.listeningLecture}
-            answers={answers}
-            onSelectAnswer={handleSelectAnswer}
-            examMode={examMode}
-          />
-        )}
-
-        {activeSection === 'structure' && (
-          <StructureSection
-            completionItems={questionBank.structureCompletion}
-            errorItems={questionBank.structureError}
-            answers={answers}
-            onSelectAnswer={handleSelectAnswer}
-          />
-        )}
-
-        {activeSection === 'reading' && (
-          <ReadingSection
-            passages={questionBank.readingPassages}
-            answers={answers}
-            onSelectAnswer={handleSelectAnswer}
-          />
-        )}
+        {activeSection === 'learning' && <LearningSection />}
+        {activeSection === 'listening' && <ListeningSection shortItems={questionBank.listeningShort} longItems={questionBank.listeningLong} lectureItems={questionBank.listeningLecture} answers={answers} onSelectAnswer={handleSelectAnswer} examMode={examMode} />}
+        {activeSection === 'structure' && <StructureSection completionItems={questionBank.structureCompletion} errorItems={questionBank.structureError} answers={answers} onSelectAnswer={handleSelectAnswer} />}
+        {activeSection === 'reading' && <ReadingSection passages={questionBank.readingPassages} answers={answers} onSelectAnswer={handleSelectAnswer} />}
       </main>
-
-      <footer className="border-t border-slate-200 bg-white py-4 px-4 text-center text-xs text-slate-500">
-        EPrT® Interactive Learning & Simulation Suite • Built with React, TypeScript & Tailwind CSS
-      </footer>
-
-      <ScoreModal
-        isOpen={isScoreModalOpen}
-        onClose={() => setIsScoreModalOpen(false)}
-        report={scoreReport}
-        onResetAnswers={handleResetAnswers}
-      />
-
-      <CrudManagerModal
-        isOpen={isCrudModalOpen}
-        onClose={() => setIsCrudModalOpen(false)}
-        bank={questionBank}
-        onUpdateBank={setQuestionBank}
-        onResetDefault={handleResetDefaultBank}
-      />
+      <footer className="border-t border-slate-200 bg-white py-4 px-4 text-center text-xs text-slate-500">EPrT® Interactive Learning & Simulation Suite • Built with React, TypeScript & Tailwind CSS</footer>
+      <ScoreModal isOpen={isScoreModalOpen} onClose={() => setIsScoreModalOpen(false)} report={scoreReport} onResetAnswers={handleResetAnswers} />
+      <CrudManagerModal isOpen={isCrudModalOpen} onClose={() => setIsCrudModalOpen(false)} bank={questionBank} onUpdateBank={setQuestionBank} onResetDefault={handleResetDefaultBank} />
     </div>
   );
 }
