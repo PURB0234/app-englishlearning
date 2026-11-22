@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { DEFAULT_QUESTION_BANK } from './data/defaultQuestions';
+import { ADDITIONAL_QUESTION_BANK } from './data/additionalQuestions';
 import { AnswerMap, EprtQuestionBank, ExamMode, SectionKey } from './types/eprt';
 import { calculateEprtScore } from './utils/scoring';
 import { Navbar } from './components/Navbar';
@@ -12,15 +13,31 @@ import { ScoreModal } from './components/ScoreModal';
 const STORAGE_BANK_KEY = 'eprt_question_bank_v1';
 const STORAGE_ANSWERS_KEY = 'eprt_user_answers_v1';
 
+function mergeItems<T extends { id: string }>(current: T[], additions: T[]): T[] {
+  const existingIds = new Set(current.map((item) => item.id));
+  return [...current, ...additions.filter((item) => !existingIds.has(item.id))];
+}
+
+function withAdditionalQuestions(bank: EprtQuestionBank): EprtQuestionBank {
+  return {
+    listeningShort: mergeItems(bank.listeningShort, ADDITIONAL_QUESTION_BANK.listeningShort),
+    listeningLong: mergeItems(bank.listeningLong, ADDITIONAL_QUESTION_BANK.listeningLong),
+    listeningLecture: mergeItems(bank.listeningLecture, ADDITIONAL_QUESTION_BANK.listeningLecture),
+    structureCompletion: mergeItems(bank.structureCompletion, ADDITIONAL_QUESTION_BANK.structureCompletion),
+    structureError: mergeItems(bank.structureError, ADDITIONAL_QUESTION_BANK.structureError),
+    readingPassages: mergeItems(bank.readingPassages, ADDITIONAL_QUESTION_BANK.readingPassages),
+  };
+}
+
 export function App() {
   const [questionBank, setQuestionBank] = useState<EprtQuestionBank>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_BANK_KEY);
-      if (saved) return JSON.parse(saved) as EprtQuestionBank;
+      if (saved) return withAdditionalQuestions(JSON.parse(saved) as EprtQuestionBank);
     } catch {
       // Fallback to default bank
     }
-    return DEFAULT_QUESTION_BANK;
+    return withAdditionalQuestions(DEFAULT_QUESTION_BANK);
   });
 
   const [answers, setAnswers] = useState<AnswerMap>(() => {
@@ -67,7 +84,7 @@ export function App() {
   };
 
   const handleResetDefaultBank = () => {
-    setQuestionBank(DEFAULT_QUESTION_BANK);
+    setQuestionBank(withAdditionalQuestions(DEFAULT_QUESTION_BANK));
     localStorage.removeItem(STORAGE_BANK_KEY);
   };
 
